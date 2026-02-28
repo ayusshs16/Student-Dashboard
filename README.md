@@ -33,12 +33,10 @@ A simple productivity dashboard designed for students to manage focus time, task
 
 GitHub Copilot was used to assist with:
 
-- Timer logic and custom duration implementation
 - Task management functions with localStorage
 - Breathing exercise animation logic
 - Memory game card-flip mechanics
 - Code refactoring and cleanup
-- Responsive CSS layout
 
 ## Future Improvements
 
