@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Focus Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <h1>📚 <span>Student Focus</span> Dashboard</h1>
+    <button id="theme-toggle" title="Toggle dark mode">🌙</button>
+  </header>
+
+  <!-- ── Dashboard Grid ── -->
+  <main class="dashboard">
+
+    <!-- 1️⃣ Focus Timer Card -->
+    <section class="card timer-card">
+      <h2><span class="icon">⏱️</span> Focus Timer</h2>
+
+      <!-- Custom time presets -->
+      <div class="timer-presets">
+        <button class="preset-btn active" data-focus="25" data-break="5">25 / 5</button>
+        <button class="preset-btn" data-focus="30" data-break="10">30 / 10</button>
+        <button class="preset-btn" data-focus="45" data-break="15">45 / 15</button>
+        <button class="preset-btn" data-focus="60" data-break="20">60 / 20</button>
+        <button class="preset-btn" id="btn-custom-preset">Custom</button>
+      </div>
+
+      <!-- Custom time input (hidden by default) -->
+      <div id="custom-time-row" class="custom-time-row hidden">
+        <label>Focus <input type="number" id="custom-focus" min="1" max="120" value="25" /> min</label>
+        <label>Break <input type="number" id="custom-break" min="1" max="60" value="5" /> min</label>
+        <button id="btn-apply-custom">Apply</button>
+      </div>
+
+      <div id="timer-display" class="timer-display">25:00</div>
+      <p id="timer-label" class="timer-label">Focus Time 🎯</p>
+      <div class="timer-buttons">
+        <button id="btn-start">▶ Start</button>
+        <button id="btn-pause">⏸ Pause</button>
+        <button id="btn-reset">↺ Reset</button>
+      </div>
+      <p id="session-count" class="session-count">Sessions today: <strong>0</strong></p>
+    </section>
+
+    <!-- 2️⃣ Task Manager Card -->
+    <section class="card task-card">
+      <h2><span class="icon">✅</span> Tasks</h2>
+      <div class="task-input-row">
+        <input type="text" id="task-input" placeholder="Add a new task…" />
+        <button id="btn-add-task">+ Add</button>
+      </div>
+      <ul id="task-list" class="task-list">
+        <!-- Tasks rendered by JS -->
+      </ul>
+    </section>
+
+    <!-- 3️⃣ Daily Stats Card -->
+    <section class="card stats-card">
+      <h2><span class="icon">📊</span> Today's Stats</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div id="stat-focus-time" class="stat-value">0 min</div>
+          <div class="stat-label">Focus Time</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-sessions" class="stat-value">0</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-completed" class="stat-value">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-pending" class="stat-value">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4️⃣ Motivational Quotes Card -->
+    <section class="card quote-card">
+      <h2><span class="icon">💡</span> Study Motivation</h2>
+      <blockquote id="quote-text" class="quote-text">"The secret of getting ahead is getting started."</blockquote>
+      <p id="quote-author" class="quote-author">— Mark Twain</p>
+      <button id="btn-new-quote" class="btn-secondary">New Quote</button>
+    </section>
+
+    <!-- 5️⃣ Breathing Exercise Card -->
+    <section class="card breathe-card">
+      <h2><span class="icon">🧘</span> Breathing Exercise</h2>
+      <p class="breathe-desc">Relax between study sessions. Follow the circle.</p>
+      <div class="breathe-circle-wrap">
+        <div id="breathe-circle" class="breathe-circle">
+          <span id="breathe-text">Start</span>
+        </div>
+      </div>
+      <button id="btn-breathe" class="btn-secondary">Start Breathing</button>
+    </section>
+
+    <!-- 6️⃣ Memory Focus Game Card -->
+    <section class="card game-card">
+      <h2><span class="icon">🧠</span> Memory Game</h2>
+      <p class="game-desc">Train your focus — match all the pairs!</p>
+      <div class="game-info">
+        <span>Moves: <strong id="game-moves">0</strong></span>
+        <span>Pairs: <strong id="game-pairs">0</strong> / 6</span>
+        <button id="btn-game-restart" class="btn-secondary btn-sm">Restart</button>
+      </div>
+      <div id="memory-board" class="memory-board">
+        <!-- Cards rendered by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Load JS at the end so DOM is ready -->
+  <script src="script.js"></script>
+</body>
+</html>
