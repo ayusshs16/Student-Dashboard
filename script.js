@@ -224,14 +224,12 @@ function tick() {
       renderTimer();
       renderStats();
       renderSubjectStats();
-      showQuote("break");  // rotate to a break quote
       alert("🎉 Focus session complete! Take a break.");
       return;
     } else {
       isBreak = false;
       timerSeconds = focusMinutes * 60;
       renderTimer();
-      showQuote("focus");  // rotate to a focus quote
       alert("⏰ Break over! Ready for another session?");
       return;
     }
@@ -243,7 +241,6 @@ function tick() {
 btnStart.addEventListener("click", () => {
   if (isRunning) return;
   isRunning = true;
-  showQuote("focus");  // rotate to a new focus quote on session start
   timerInterval = setInterval(tick, 1000);
 });
 
@@ -369,69 +366,7 @@ function renderStats() {
 
 renderStats();
 
-// ═══════════════════════════════════════════════════
-//  6. MOTIVATIONAL QUOTE ROTATOR
-//     – Focus quotes shown when a session STARTS
-//     – Break quotes shown when a session COMPLETES
-//     – Smooth CSS fade-in / fade-out transition
-// ═══════════════════════════════════════════════════
-
-// Quotes shown when a focus session starts
-const focusQuotes = [
-  "The secret of getting ahead is getting started.",
-  "Start where you are. Use what you have.",
-  "Action creates clarity.",
-  "Focus on the next step, not the whole staircase.",
-];
-
-// Quotes shown when a focus session completes (break time)
-const breakQuotes = [
-  "Good work. Take the break you earned.",
-  "Progress looks like showing up again.",
-  "Consistency is the real win.",
-  "You moved forward today.",
-];
-
-// DOM references
-const quoteContainer = document.getElementById("quote-container");
-const quoteTextEl   = document.getElementById("quote-text");
-const quoteAuthorEl = document.getElementById("quote-author");
-const quoteModeEl   = document.getElementById("quote-mode");
-
-// Pick a random item from an array, avoiding the previous pick
-let lastQuote = "";
-function pickRandom(arr) {
-  let q;
-  do { q = arr[Math.floor(Math.random() * arr.length)]; } while (q === lastQuote && arr.length > 1);
-  lastQuote = q;
-  return q;
-}
-
-/**
- * Show a quote with a fade-out → swap text → fade-in transition.
- * @param {"focus"|"break"} mode – which pool to pick from
- */
-function showQuote(mode) {
-  const pool  = mode === "focus" ? focusQuotes : breakQuotes;
-  const label = mode === "focus" ? "🎯 Focus Mode" : "🧘 Break Mode";
-  const tag   = mode === "focus" ? "Focus Quote" : "Break Quote";
-
-  // 1. Fade out
-  quoteContainer.classList.add("fade-out");
-
-  // 2. After fade-out completes (500ms), swap text and fade in
-  setTimeout(() => {
-    quoteTextEl.textContent  = `"${pickRandom(pool)}"`;
-    quoteAuthorEl.textContent = `— ${tag}`;
-    quoteModeEl.textContent   = label;
-    quoteContainer.classList.remove("fade-out");
-  }, 500);
-}
-
-// Show an initial focus quote on page load (no fade needed)
-quoteTextEl.textContent  = `"${pickRandom(focusQuotes)}"`;
-quoteAuthorEl.textContent = "— Focus Quote";
-quoteModeEl.textContent   = "🎯 Focus Mode";
+// (Static quote — displayed in HTML, no JS needed)
 
 // ═══════════════════════════════════════════════════
 //  7. SUBJECT-WISE STATS
