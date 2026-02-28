@@ -14,14 +14,12 @@ function todayKey() {
 
 const themeToggle = document.getElementById("theme-toggle");
 
-// Load saved theme preference (default: light)
 function loadTheme() {
   const saved = localStorage.getItem("theme") || "light";
   document.documentElement.setAttribute("data-theme", saved);
   themeToggle.textContent = saved === "dark" ? "☀️" : "🌙";
 }
 
-// Toggle between light and dark
 themeToggle.addEventListener("click", () => {
   const current = document.documentElement.getAttribute("data-theme");
   const next = current === "dark" ? "light" : "dark";
@@ -33,20 +31,81 @@ themeToggle.addEventListener("click", () => {
 loadTheme();
 
 // ═══════════════════════════════════════════════════
-//  2. FOCUS TIMER (Pomodoro) — with custom durations
+//  2. SUBJECT MANAGER
 // ═══════════════════════════════════════════════════
 
-// Default durations (minutes) — can be changed by presets / custom input
+const subjectSelect = document.getElementById("subject-select");
+const btnAddSubject = document.getElementById("btn-add-subject");
+const addSubjectRow = document.getElementById("add-subject-row");
+const newSubjectInput = document.getElementById("new-subject-input");
+const btnSaveSubject = document.getElementById("btn-save-subject");
+
+// Load / save subjects list
+function loadSubjects() {
+  const raw = localStorage.getItem("subjects");
+  return raw ? JSON.parse(raw) : ["Mathematics", "Science", "English", "History", "Programming"];
+}
+
+function saveSubjects(list) {
+  localStorage.setItem("subjects", JSON.stringify(list));
+}
+
+// Populate the dropdown
+function renderSubjectDropdown() {
+  const subjects = loadSubjects();
+  const currentVal = subjectSelect.value;
+  // Keep the first placeholder option, rebuild the rest
+  subjectSelect.innerHTML = '<option value="">— Select Subject —</option>';
+  subjects.forEach((s) => {
+    const opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    subjectSelect.appendChild(opt);
+  });
+  // Restore selection if still valid
+  if (subjects.includes(currentVal)) subjectSelect.value = currentVal;
+}
+
+// Toggle "add subject" row
+btnAddSubject.addEventListener("click", () => {
+  addSubjectRow.classList.toggle("hidden");
+  if (!addSubjectRow.classList.contains("hidden")) newSubjectInput.focus();
+});
+
+// Save new subject
+function saveNewSubject() {
+  const name = newSubjectInput.value.trim();
+  if (!name) return;
+  const subjects = loadSubjects();
+  if (!subjects.includes(name)) {
+    subjects.push(name);
+    saveSubjects(subjects);
+  }
+  newSubjectInput.value = "";
+  addSubjectRow.classList.add("hidden");
+  renderSubjectDropdown();
+  subjectSelect.value = name; // auto-select the new subject
+}
+
+btnSaveSubject.addEventListener("click", saveNewSubject);
+newSubjectInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") saveNewSubject();
+});
+
+renderSubjectDropdown();
+
+// ═══════════════════════════════════════════════════
+//  3. FOCUS TIMER (Pomodoro) — with subject tracking
+// ═══════════════════════════════════════════════════
+
 let focusMinutes = 25;
 let breakMinutes = 5;
-
-// Timer state
 let timerSeconds = focusMinutes * 60;
 let timerInterval = null;
 let isRunning = false;
 let isBreak = false;
 
-// DOM references — timer
+// DOM
 const display = document.getElementById("timer-display");
 const timerLabel = document.getElementById("timer-label");
 const btnStart = document.getElementById("btn-start");
@@ -54,7 +113,7 @@ const btnPause = document.getElementById("btn-pause");
 const btnReset = document.getElementById("btn-reset");
 const sessionCountEl = document.getElementById("session-count");
 
-// DOM references — presets & custom input
+// Presets & custom
 const presetBtns = document.querySelectorAll(".preset-btn:not(#btn-custom-preset)");
 const btnCustomPreset = document.getElementById("btn-custom-preset");
 const customTimeRow = document.getElementById("custom-time-row");
@@ -62,23 +121,19 @@ const customFocusInput = document.getElementById("custom-focus");
 const customBreakInput = document.getElementById("custom-break");
 const btnApplyCustom = document.getElementById("btn-apply-custom");
 
-// ── Preset buttons ──
+// Preset buttons
 presetBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
-    if (isRunning) return; // don't change while running
-    // Update active class
+    if (isRunning) return;
     document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     customTimeRow.classList.add("hidden");
-
-    // Read data attributes
     focusMinutes = parseInt(btn.dataset.focus, 10);
     breakMinutes = parseInt(btn.dataset.break, 10);
     resetTimerDisplay();
   });
 });
 
-// ── Custom preset toggle ──
 btnCustomPreset.addEventListener("click", () => {
   if (isRunning) return;
   document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
@@ -86,7 +141,6 @@ btnCustomPreset.addEventListener("click", () => {
   customTimeRow.classList.toggle("hidden");
 });
 
-// ── Apply custom time ──
 btnApplyCustom.addEventListener("click", () => {
   if (isRunning) return;
   const f = parseInt(customFocusInput.value, 10);
@@ -98,40 +152,50 @@ btnApplyCustom.addEventListener("click", () => {
   resetTimerDisplay();
 });
 
-// Helper: reset display to current focusMinutes
 function resetTimerDisplay() {
   isBreak = false;
   timerSeconds = focusMinutes * 60;
   renderTimer();
 }
 
-// ── Load today's session data from localStorage ──
+// Daily data (overall)
 function loadDailyData() {
   const raw = localStorage.getItem("daily_" + todayKey());
-  if (raw) return JSON.parse(raw);
-  return { sessions: 0, focusSeconds: 0 };
+  return raw ? JSON.parse(raw) : { sessions: 0, focusSeconds: 0 };
 }
-
 function saveDailyData(data) {
   localStorage.setItem("daily_" + todayKey(), JSON.stringify(data));
 }
 
-// ── Format seconds → MM:SS ──
+// Subject-wise data for today
+function loadSubjectData() {
+  const raw = localStorage.getItem("subjectData_" + todayKey());
+  return raw ? JSON.parse(raw) : {};
+}
+function saveSubjectData(data) {
+  localStorage.setItem("subjectData_" + todayKey(), JSON.stringify(data));
+}
+
 function formatTime(totalSec) {
   const m = String(Math.floor(totalSec / 60)).padStart(2, "0");
   const s = String(totalSec % 60).padStart(2, "0");
   return `${m}:${s}`;
 }
 
-// ── Render timer display ──
 function renderTimer() {
   display.textContent = formatTime(timerSeconds);
-  timerLabel.textContent = isBreak ? "Break Time 🧘" : "Focus Time 🎯";
+  const subject = subjectSelect.value;
+  if (isBreak) {
+    timerLabel.textContent = "Break Time 🧘";
+  } else if (subject) {
+    timerLabel.textContent = `Studying: ${subject} 🎯`;
+  } else {
+    timerLabel.textContent = "Focus Time 🎯";
+  }
   const daily = loadDailyData();
   sessionCountEl.innerHTML = `Sessions today: <strong>${daily.sessions}</strong>`;
 }
 
-// ── Tick: called every second ──
 function tick() {
   if (timerSeconds <= 0) {
     clearInterval(timerInterval);
@@ -139,41 +203,50 @@ function tick() {
     isRunning = false;
 
     if (!isBreak) {
-      // Focus period finished → record session
+      // Record session — overall
       const daily = loadDailyData();
       daily.sessions += 1;
       daily.focusSeconds += focusMinutes * 60;
       saveDailyData(daily);
 
-      // Switch to break
+      // Record session — per subject
+      const subject = subjectSelect.value;
+      if (subject) {
+        const sd = loadSubjectData();
+        if (!sd[subject]) sd[subject] = { sessions: 0, seconds: 0 };
+        sd[subject].sessions += 1;
+        sd[subject].seconds += focusMinutes * 60;
+        saveSubjectData(sd);
+      }
+
       isBreak = true;
       timerSeconds = breakMinutes * 60;
       renderTimer();
       renderStats();
+      renderSubjectStats();
+      showQuote("break");  // rotate to a break quote
       alert("🎉 Focus session complete! Take a break.");
       return;
     } else {
-      // Break finished → back to focus
       isBreak = false;
       timerSeconds = focusMinutes * 60;
       renderTimer();
+      showQuote("focus");  // rotate to a focus quote
       alert("⏰ Break over! Ready for another session?");
       return;
     }
   }
-
   timerSeconds--;
   renderTimer();
 }
 
-// ── Start button ──
 btnStart.addEventListener("click", () => {
   if (isRunning) return;
   isRunning = true;
+  showQuote("focus");  // rotate to a new focus quote on session start
   timerInterval = setInterval(tick, 1000);
 });
 
-// ── Pause button ──
 btnPause.addEventListener("click", () => {
   if (!isRunning) return;
   isRunning = false;
@@ -181,7 +254,6 @@ btnPause.addEventListener("click", () => {
   timerInterval = null;
 });
 
-// ── Reset button ──
 btnReset.addEventListener("click", () => {
   isRunning = false;
   clearInterval(timerInterval);
@@ -189,11 +261,13 @@ btnReset.addEventListener("click", () => {
   resetTimerDisplay();
 });
 
-// Initial render
+// Update label when subject changes
+subjectSelect.addEventListener("change", renderTimer);
+
 renderTimer();
 
 // ═══════════════════════════════════════════════════
-//  3. TASK MANAGER (with localStorage)
+//  4. TASK MANAGER
 // ═══════════════════════════════════════════════════
 
 const taskInput = document.getElementById("task-input");
@@ -202,10 +276,8 @@ const taskList = document.getElementById("task-list");
 
 function loadTasks() {
   const raw = localStorage.getItem("tasks");
-  if (raw) return JSON.parse(raw);
-  return [];
+  return raw ? JSON.parse(raw) : [];
 }
-
 function saveTasks(tasks) {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 }
@@ -213,13 +285,11 @@ function saveTasks(tasks) {
 function renderTasks() {
   const tasks = loadTasks();
   taskList.innerHTML = "";
-
   if (tasks.length === 0) {
     taskList.innerHTML = '<li class="empty-msg">No tasks yet — add one above!</li>';
     renderStats();
     return;
   }
-
   tasks.forEach((task, index) => {
     const li = document.createElement("li");
     li.className = "task-item" + (task.done ? " completed" : "");
@@ -244,7 +314,6 @@ function renderTasks() {
     li.appendChild(delBtn);
     taskList.appendChild(li);
   });
-
   renderStats();
 }
 
@@ -259,9 +328,7 @@ function addTask() {
 }
 
 btnAddTask.addEventListener("click", addTask);
-taskInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") addTask();
-});
+taskInput.addEventListener("keydown", (e) => { if (e.key === "Enter") addTask(); });
 
 function toggleTask(index) {
   const tasks = loadTasks();
@@ -281,7 +348,7 @@ function deleteTask(index) {
 renderTasks();
 
 // ═══════════════════════════════════════════════════
-//  4. DAILY DASHBOARD STATS
+//  5. DAILY STATS
 // ═══════════════════════════════════════════════════
 
 const statFocusTime = document.getElementById("stat-focus-time");
@@ -291,223 +358,133 @@ const statPending = document.getElementById("stat-pending");
 
 function renderStats() {
   const daily = loadDailyData();
-  const totalMin = Math.floor(daily.focusSeconds / 60);
-  statFocusTime.textContent = totalMin + " min";
+  statFocusTime.textContent = Math.floor(daily.focusSeconds / 60) + " min";
   statSessions.textContent = daily.sessions;
 
   const tasks = loadTasks();
   const today = todayKey();
-  const completedToday = tasks.filter(
-    (t) => t.done && t.completedAt === today
-  ).length;
-  const pending = tasks.filter((t) => !t.done).length;
-
-  statCompleted.textContent = completedToday;
-  statPending.textContent = pending;
+  statCompleted.textContent = tasks.filter((t) => t.done && t.completedAt === today).length;
+  statPending.textContent = tasks.filter((t) => !t.done).length;
 }
 
 renderStats();
 
 // ═══════════════════════════════════════════════════
-//  5. MOTIVATIONAL QUOTES
+//  6. MOTIVATIONAL QUOTE ROTATOR
+//     – Focus quotes shown when a session STARTS
+//     – Break quotes shown when a session COMPLETES
+//     – Smooth CSS fade-in / fade-out transition
 // ═══════════════════════════════════════════════════
 
-const quotes = [
-  { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
-  { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
-  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-  { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
-  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
-  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
-  { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela" },
-  { text: "The beautiful thing about learning is that nobody can take it away from you.", author: "B.B. King" },
-  { text: "Strive for progress, not perfection.", author: "Unknown" },
-  { text: "A little progress each day adds up to big results.", author: "Satya Nani" },
-  { text: "Focus on being productive instead of busy.", author: "Tim Ferriss" },
-  { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
-  { text: "Your limitation—it's only your imagination.", author: "Unknown" },
-  { text: "Push yourself, because no one else is going to do it for you.", author: "Unknown" },
-  { text: "Dream bigger. Do bigger.", author: "Unknown" },
-  { text: "Wake up with determination. Go to bed with satisfaction.", author: "Unknown" },
-  { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
-  { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
-  { text: "Study hard, for the well is deep, and our brains are shallow.", author: "Richard Baxter" },
+// Quotes shown when a focus session starts
+const focusQuotes = [
+  "The secret of getting ahead is getting started.",
+  "Start where you are. Use what you have.",
+  "Action creates clarity.",
+  "Focus on the next step, not the whole staircase.",
 ];
 
-const quoteTextEl = document.getElementById("quote-text");
+// Quotes shown when a focus session completes (break time)
+const breakQuotes = [
+  "Good work. Take the break you earned.",
+  "Progress looks like showing up again.",
+  "Consistency is the real win.",
+  "You moved forward today.",
+];
+
+// DOM references
+const quoteContainer = document.getElementById("quote-container");
+const quoteTextEl   = document.getElementById("quote-text");
 const quoteAuthorEl = document.getElementById("quote-author");
-const btnNewQuote = document.getElementById("btn-new-quote");
+const quoteModeEl   = document.getElementById("quote-mode");
 
-function showRandomQuote() {
-  const q = quotes[Math.floor(Math.random() * quotes.length)];
-  quoteTextEl.textContent = `"${q.text}"`;
-  quoteAuthorEl.textContent = `— ${q.author}`;
+// Pick a random item from an array, avoiding the previous pick
+let lastQuote = "";
+function pickRandom(arr) {
+  let q;
+  do { q = arr[Math.floor(Math.random() * arr.length)]; } while (q === lastQuote && arr.length > 1);
+  lastQuote = q;
+  return q;
 }
 
-btnNewQuote.addEventListener("click", showRandomQuote);
+/**
+ * Show a quote with a fade-out → swap text → fade-in transition.
+ * @param {"focus"|"break"} mode – which pool to pick from
+ */
+function showQuote(mode) {
+  const pool  = mode === "focus" ? focusQuotes : breakQuotes;
+  const label = mode === "focus" ? "🎯 Focus Mode" : "🧘 Break Mode";
+  const tag   = mode === "focus" ? "Focus Quote" : "Break Quote";
 
-// Show a random quote on load
-showRandomQuote();
+  // 1. Fade out
+  quoteContainer.classList.add("fade-out");
 
-// ═══════════════════════════════════════════════════
-//  6. BREATHING EXERCISE
-// ═══════════════════════════════════════════════════
-
-const breatheCircle = document.getElementById("breathe-circle");
-const breatheText = document.getElementById("breathe-text");
-const btnBreathe = document.getElementById("btn-breathe");
-
-let breatheTimer = null;      // interval id
-let breatheRunning = false;
-
-// Cycle: inhale 4s → hold 4s → exhale 4s (total 12s per cycle)
-function startBreathingCycle() {
-  let phase = 0; // 0 = inhale, 1 = hold, 2 = exhale
-
-  function setPhase() {
-    if (phase === 0) {
-      breatheCircle.className = "breathe-circle inhale";
-      breatheText.textContent = "Breathe In";
-    } else if (phase === 1) {
-      breatheText.textContent = "Hold";
-    } else {
-      breatheCircle.className = "breathe-circle exhale";
-      breatheText.textContent = "Breathe Out";
-    }
-    phase = (phase + 1) % 3;
-  }
-
-  setPhase(); // start immediately
-  breatheTimer = setInterval(setPhase, 4000);
+  // 2. After fade-out completes (500ms), swap text and fade in
+  setTimeout(() => {
+    quoteTextEl.textContent  = `"${pickRandom(pool)}"`;
+    quoteAuthorEl.textContent = `— ${tag}`;
+    quoteModeEl.textContent   = label;
+    quoteContainer.classList.remove("fade-out");
+  }, 500);
 }
 
-btnBreathe.addEventListener("click", () => {
-  if (breatheRunning) {
-    // Stop
-    clearInterval(breatheTimer);
-    breatheTimer = null;
-    breatheRunning = false;
-    breatheCircle.className = "breathe-circle";
-    breatheText.textContent = "Start";
-    btnBreathe.textContent = "Start Breathing";
-  } else {
-    // Start
-    breatheRunning = true;
-    btnBreathe.textContent = "Stop";
-    startBreathingCycle();
-  }
-});
+// Show an initial focus quote on page load (no fade needed)
+quoteTextEl.textContent  = `"${pickRandom(focusQuotes)}"`;
+quoteAuthorEl.textContent = "— Focus Quote";
+quoteModeEl.textContent   = "🎯 Focus Mode";
 
 // ═══════════════════════════════════════════════════
-//  7. MEMORY FOCUS GAME
+//  7. SUBJECT-WISE STATS
 // ═══════════════════════════════════════════════════
 
-const memoryBoard = document.getElementById("memory-board");
-const gameMovesEl = document.getElementById("game-moves");
-const gamePairsEl = document.getElementById("game-pairs");
-const btnGameRestart = document.getElementById("btn-game-restart");
+const subjectStatsList = document.getElementById("subject-stats-list");
 
-// Emoji pairs for the game (6 pairs = 12 cards)
-const emojiPool = ["📖", "✏️", "🎓", "🧪", "🔬", "🌍", "🎨", "🎵", "💻", "🧮"];
+function renderSubjectStats() {
+  const sd = loadSubjectData();
+  const subjects = Object.keys(sd);
 
-let gameCards = [];
-let flippedCards = [];
-let matchedPairs = 0;
-let totalMoves = 0;
-let gameLocked = false; // prevent clicking during animation
-
-// Shuffle array (Fisher-Yates)
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  if (subjects.length === 0) {
+    subjectStatsList.innerHTML = '<p class="subject-empty-msg">No subject data yet — select a subject and complete a focus session.</p>';
+    return;
   }
-  return arr;
-}
 
-// Initialize / restart game
-function initGame() {
-  // Pick 6 random emojis, duplicate them for pairs
-  const picked = shuffle([...emojiPool]).slice(0, 6);
-  gameCards = shuffle([...picked, ...picked]);
+  // Find the max seconds for proportional bars
+  const maxSec = Math.max(...subjects.map((s) => sd[s].seconds));
 
-  flippedCards = [];
-  matchedPairs = 0;
-  totalMoves = 0;
-  gameLocked = false;
-  gameMovesEl.textContent = "0";
-  gamePairsEl.textContent = "0";
+  subjectStatsList.innerHTML = "";
 
-  memoryBoard.innerHTML = "";
+  subjects.forEach((name) => {
+    const { sessions, seconds } = sd[name];
+    const mins = Math.floor(seconds / 60);
+    const pct = maxSec > 0 ? (seconds / maxSec) * 100 : 0;
 
-  gameCards.forEach((emoji, index) => {
-    const card = document.createElement("div");
-    card.className = "mem-card";
-    card.dataset.index = index;
-    card.dataset.emoji = emoji;
+    const row = document.createElement("div");
+    row.className = "subject-stat-row";
 
-    // Front face (hidden content — shows "?")
-    const front = document.createElement("div");
-    front.className = "mem-front";
-    front.textContent = "?";
+    row.innerHTML = `
+      <span class="subject-stat-name">${name}</span>
+      <div class="subject-stat-bar-wrap">
+        <div class="subject-stat-bar" style="width: ${pct}%"></div>
+      </div>
+      <span class="subject-stat-time">${mins} min · ${sessions}s</span>
+      <button class="subject-stat-delete" title="Remove subject" data-subject="${name}">✕</button>
+    `;
 
-    // Back face (emoji)
-    const back = document.createElement("div");
-    back.className = "mem-back";
-    back.textContent = emoji;
+    // Delete subject button
+    row.querySelector(".subject-stat-delete").addEventListener("click", () => {
+      // Remove from today's data
+      const data = loadSubjectData();
+      delete data[name];
+      saveSubjectData(data);
+      // Remove from subject list
+      const list = loadSubjects().filter((s) => s !== name);
+      saveSubjects(list);
+      renderSubjectDropdown();
+      renderSubjectStats();
+    });
 
-    card.appendChild(front);
-    card.appendChild(back);
-
-    card.addEventListener("click", () => flipCard(card));
-    memoryBoard.appendChild(card);
+    subjectStatsList.appendChild(row);
   });
 }
 
-function flipCard(card) {
-  // Ignore invalid clicks
-  if (gameLocked) return;
-  if (card.classList.contains("flipped")) return;
-  if (card.classList.contains("matched")) return;
-
-  card.classList.add("flipped");
-  flippedCards.push(card);
-
-  if (flippedCards.length === 2) {
-    totalMoves++;
-    gameMovesEl.textContent = totalMoves;
-    gameLocked = true;
-
-    const [c1, c2] = flippedCards;
-
-    if (c1.dataset.emoji === c2.dataset.emoji) {
-      // Match found
-      c1.classList.add("matched");
-      c2.classList.add("matched");
-      matchedPairs++;
-      gamePairsEl.textContent = matchedPairs;
-      flippedCards = [];
-      gameLocked = false;
-
-      if (matchedPairs === 6) {
-        setTimeout(() => {
-          alert(`🎉 You matched all pairs in ${totalMoves} moves!`);
-        }, 300);
-      }
-    } else {
-      // No match — flip back after a short delay
-      setTimeout(() => {
-        c1.classList.remove("flipped");
-        c2.classList.remove("flipped");
-        flippedCards = [];
-        gameLocked = false;
-      }, 800);
-    }
-  }
-}
-
-btnGameRestart.addEventListener("click", initGame);
-
-// Start the game on page load
-initGame();
+renderSubjectStats();

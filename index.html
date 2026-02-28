@@ -21,7 +21,19 @@
     <section class="card timer-card">
       <h2><span class="icon">⏱️</span> Focus Timer</h2>
 
-      <!-- Custom time presets -->
+      <!-- Subject selector -->
+      <div class="subject-row">
+        <select id="subject-select">
+          <option value="">— Select Subject —</option>
+        </select>
+        <button id="btn-add-subject" class="btn-secondary btn-sm" title="Add new subject">+ Subject</button>
+      </div>
+      <div id="add-subject-row" class="add-subject-row hidden">
+        <input type="text" id="new-subject-input" placeholder="e.g. Mathematics" maxlength="30" />
+        <button id="btn-save-subject" class="btn-secondary btn-sm">Save</button>
+      </div>
+
+      <!-- Time presets -->
       <div class="timer-presets">
         <button class="preset-btn active" data-focus="25" data-break="5">25 / 5</button>
         <button class="preset-btn" data-focus="30" data-break="10">30 / 10</button>
@@ -82,37 +94,22 @@
       </div>
     </section>
 
-    <!-- 4️⃣ Motivational Quotes Card -->
+    <!-- 4️⃣ Motivational Quote Rotator -->
     <section class="card quote-card">
       <h2><span class="icon">💡</span> Study Motivation</h2>
-      <blockquote id="quote-text" class="quote-text">"The secret of getting ahead is getting started."</blockquote>
-      <p id="quote-author" class="quote-author">— Mark Twain</p>
-      <button id="btn-new-quote" class="btn-secondary">New Quote</button>
+      <div id="quote-container" class="quote-container">
+        <blockquote id="quote-text" class="quote-text">"The secret of getting ahead is getting started."</blockquote>
+        <p id="quote-author" class="quote-author">— Focus Quote</p>
+      </div>
+      <p id="quote-mode" class="quote-mode">🎯 Focus Mode</p>
     </section>
 
-    <!-- 5️⃣ Breathing Exercise Card -->
-    <section class="card breathe-card">
-      <h2><span class="icon">🧘</span> Breathing Exercise</h2>
-      <p class="breathe-desc">Relax between study sessions. Follow the circle.</p>
-      <div class="breathe-circle-wrap">
-        <div id="breathe-circle" class="breathe-circle">
-          <span id="breathe-text">Start</span>
-        </div>
-      </div>
-      <button id="btn-breathe" class="btn-secondary">Start Breathing</button>
-    </section>
-
-    <!-- 6️⃣ Memory Focus Game Card -->
-    <section class="card game-card">
-      <h2><span class="icon">🧠</span> Memory Game</h2>
-      <p class="game-desc">Train your focus — match all the pairs!</p>
-      <div class="game-info">
-        <span>Moves: <strong id="game-moves">0</strong></span>
-        <span>Pairs: <strong id="game-pairs">0</strong> / 6</span>
-        <button id="btn-game-restart" class="btn-secondary btn-sm">Restart</button>
-      </div>
-      <div id="memory-board" class="memory-board">
-        <!-- Cards rendered by JS -->
+    <!-- 5️⃣ Subject-wise Stats Card (full width) -->
+    <section class="card subject-stats-card">
+      <h2><span class="icon">📘</span> Subject-wise Focus</h2>
+      <p class="subject-stats-desc">Today's focus time per subject</p>
+      <div id="subject-stats-list" class="subject-stats-list">
+        <!-- Rendered by JS -->
       </div>
     </section>
 
